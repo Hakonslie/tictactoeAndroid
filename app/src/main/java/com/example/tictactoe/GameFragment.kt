@@ -12,12 +12,24 @@ import android.widget.Toast
 import kotlin.random.Random
 
 class GameFragment : Fragment() {
+
+    // TODO: Need to show seconds past since game started (LiveData)
+    // TODO: Need to add history (Implement local storage)
+    // TODO: Check Android Design principles, Architecture and code standards
+    // TODO: Description of solution by text, strengths and weaknesses. Decisions etc.
+    // TODO: Model of Architecture and and flow in app
+    // TODO: Screenshots
+    // TODO: BONUS: Add difficult AI
+    // TODO: BONUS: Make extra pretty
+
         lateinit var arrayOfGrids: Array<TextView>
         var isXTurn: Boolean = true
         var gameIsRunning: Boolean = false
         var gameVSAI: Boolean = false
         var moveNumber: Int = 0
         private var winningConditions: Array<String> = arrayOf("012", "345", "678", "036", "147", "258", "246", "048")
+        private val arrayOfSides: Array<Int> = arrayOf(1, 3, 5, 7);
+        private val arrayOfCorners: Array<Int> = arrayOf(0, 2, 6, 8);
         private lateinit var textViewPlayerOne: TextView
         private lateinit var textViewPlayerTwo: TextView
         private lateinit var textGameEnd: TextView
@@ -140,18 +152,102 @@ class GameFragment : Fragment() {
     }
 
     private fun makeAIMove() {
-        Log.e("AI", "Making a move")
-        var availableMoves: MutableList<String> = mutableListOf();
+
+        val availableMoves: MutableList<String> = mutableListOf();
         val inGrid = arrayOfGrids.map { T -> T.text }
         inGrid.forEachIndexed { i, a -> if(a !== "X" && a !== "O") availableMoves.add(i.toString()) }
 
-         Log.e("inGrid", inGrid.toString())
-         Log.e("Mutable", availableMoves.toString())
 
-        if(availableMoves.size != 0)
-            clickedGrid(arrayOfGrids[Integer.parseInt(availableMoves[Random.nextInt(0, availableMoves.size)])])
+        // Corners
+        // val arrayOfDangerousCombinations: Array<String> = arrayOf("81", "83", "61", "65", "50", "70", "23", "27");
+
+        // last move
+        if(availableMoves.size == 1) {
+            clickedGrid(arrayOfGrids[Integer.parseInt(availableMoves[0])]);
+        }
+        // first move
+        else if(availableMoves.size == 8) {
+            var xChose = -1
+            inGrid.forEachIndexed { i, c -> if(c == "X") xChose = i }
+            if(arrayOfCorners.contains(xChose)) { clickedGrid(arrayOfGrids[4]) }
+            else if(arrayOfSides.contains(xChose)) { clickedGrid(arrayOfGrids[4]) }
+            else if(xChose == 4) { clickedGrid(arrayOfGrids[0]) }
+        }
+        else if(availableMoves.size != 0)
+        {
+            val xPos: MutableList<Int> = mutableListOf()
+            val oPos: MutableList<Int> = mutableListOf()
+            inGrid.forEachIndexed {i, v -> if(v == "X") xPos.add(i) else if (v == "O") oPos.add(i) }
+            val investigated = investigateMove(xPos, oPos)
+            if (investigated != -1) clickedGrid(arrayOfGrids[investigated])
+            else {
+                clickedGrid(arrayOfGrids[Integer.parseInt(availableMoves[Random.nextInt(0, availableMoves.size)])])
+                Log.e("AI", "I mad a random move :P")
+            }
+    }
 
     }
+
+    // Will always try to draw!
+    fun investigateMove(xPositions: List<Int>, oPositions: List<Int>): Int  {
+
+        // Winning condititions: "012", "345", "678", "036", "147", "258", "246", "048"
+        val possibleMovesFirstPriority = mutableListOf<Int>();
+        val possibleMovesSecondPriority = mutableListOf<Int>();
+        // Calculate immediate dangers in opponent positioning
+        Log.e("xPositions", xPositions.toString())
+        Log.e("oPositions", oPositions.toString())
+        for(winCon in winningConditions) {
+            val currentConCheck = winCon.chunked(1)
+            var conditionsMet = 0
+            val missingSpots: MutableList<Int> = mutableListOf()
+            // Find dangerous combinations
+            for (conPos in currentConCheck) {
+                if (xPositions.contains(Integer.parseInt(conPos))) conditionsMet++
+                else missingSpots.add(Integer.parseInt(conPos))
+            }
+            // Check if there already are "O"-s there
+            if (conditionsMet == 2 && !oPositions.contains(missingSpots[0])) {
+                Log.e("AI", "Found a possible first priority move")
+                possibleMovesFirstPriority.add(missingSpots[0])
+            }
+            else if (conditionsMet == 1 && !oPositions.contains(missingSpots[0]) && !oPositions.contains(missingSpots[1])) {
+                Log.e("AI", "Found a possible secondary priority move")
+                possibleMovesSecondPriority.addAll(arrayOf(missingSpots[0],missingSpots[1]))
+            }
+        }
+        // from: https://stackoverflow.com/questions/47200440/kotlin-how-to-find-number-of-repeated-values-in-a-l
+        // Check if there are moves that stop more winning conditions
+        val betterSecondPriorityMoves: Map<Int, Int> = possibleMovesSecondPriority.groupingBy { it }.eachCount().filter { it.value > 1}
+        Log.e("AI", "Better SecondPriorityMoves: $betterSecondPriorityMoves")
+            var chosenMove: Int
+
+        if (possibleMovesFirstPriority.size > 0) {
+            chosenMove = possibleMovesFirstPriority[Random.nextInt(0, possibleMovesFirstPriority.size)]
+            Log.e("AI", "Going for a first priority move: $chosenMove")
+            return chosenMove
+        }
+        else if (betterSecondPriorityMoves.isNotEmpty()) {
+            Log.e("AI", "This looks like a trap!")
+            if(betterSecondPriorityMoves.size == 2) {
+                return arrayOfSides.map { v -> if(xPositions.contains(v) || oPositions.contains(v))}
+            }
+            chosenMove = betterSecondPriorityMoves.entries.elementAt(Random.nextInt(betterSecondPriorityMoves.size)).key
+            Log.e("AI", "Going for a good second priority move $chosenMove")
+            return chosenMove
+        }
+        else if (possibleMovesSecondPriority.size > 0) {
+            chosenMove = possibleMovesSecondPriority[Random.nextInt(0, possibleMovesSecondPriority.size)]
+            Log.e("AI", "Going for an ok second priority move $chosenMove")
+            return chosenMove
+        }
+        else return -1
+    }
+
+    //TODO: Add emoji responses from BOT
+    //TODO: https://developer.android.com/reference/android/os/CountDownTimer
+
+    // Double corner is dangerous
 
     private fun clickedGrid(view: View) {
         val textView: TextView = view as TextView
@@ -163,20 +259,21 @@ class GameFragment : Fragment() {
         }
 
         else if(gameIsRunning){
+
+
             if (isXTurn) {
                 textView.text = "X";
                 setTurnPlayerTwo()
-                if(gameVSAI) {
-                    makeAIMove()
-                }
+                checkGameStatus()
+                if(gameIsRunning && gameVSAI)  makeAIMove()
             } else  {
                 textView.text = "O";
                 setTurnPlayerOne()
                     }
             moveNumber++
-            if(moveNumber > 4) {
-                checkGameStatus();
-            }
+
+            checkGameStatus();
+
         }
         }
     }
