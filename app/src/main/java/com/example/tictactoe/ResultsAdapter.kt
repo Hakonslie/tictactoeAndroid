@@ -25,8 +25,8 @@ class ResultsAdapter : RecyclerView.Adapter<ResultsAdapter.ResultsAdapterViewHol
         return ResultsAdapterViewHolder(view)
     }
     override fun onBindViewHolder(resultsAdapterViewHolder: ResultsAdapterViewHolder, position: Int) {
-        val currentResultData: List<String> = resultData.map { it.toString().plus(it.toString()) }
-        resultsAdapterViewHolder.resultsTextView.text = currentResultData
+        val currentResultData: List<String> = resultData!!.map { it.toString() }
+        resultsAdapterViewHolder.resultsTextView.text = currentResultData.toString()
     }
 
     override fun getItemCount(): Int {

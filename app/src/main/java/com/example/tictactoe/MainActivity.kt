@@ -14,15 +14,17 @@ class MainActivity : AppCompatActivity() {
     private val gameFragment = GameFragment()
     private val manager = supportFragmentManager
     private var fragmentTransaction = manager.beginTransaction()
-
+    private lateinit var resultFragment: ResultFragment
+/*
     val db = Room.databaseBuilder(
         applicationContext,
         AppDatabase::class.java, "results"
     ).build()
-
+*/
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        resultFragment = ResultFragment()
 
         fragmentTransaction.add(R.id.constraint_main, loginFragment)
         fragmentTransaction.commit()

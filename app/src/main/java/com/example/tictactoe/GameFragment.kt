@@ -16,7 +16,6 @@ import android.os.CountDownTimer
 class GameFragment : Fragment() {
 
     // TODO: Need to add history (Implement local storage)
-    // TODO: Clean up game timer
     // TODO: Check Android Design principles, Architecture and code standards
     // TODO: Description of solution by text, strengths and weaknesses. Decisions etc.
     // TODO: Model of Architecture and and flow in app
@@ -37,7 +36,7 @@ class GameFragment : Fragment() {
         private lateinit var textGameEnd: TextView
         private lateinit var playerOneString: String
         private lateinit var playerTwoString: String
-        private var gameCounter: Int = 0
+        private lateinit var gameTimer: GameTimer
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.fragment_game, container, false)
@@ -45,10 +44,12 @@ class GameFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
         textViewPlayerOne = view.findViewById(R.id.tv_game_player_one)
         textViewPlayerTwo = view.findViewById(R.id.tv_game_player_two)
         textGameEnd =       view.findViewById(R.id.tv_game_end)
         textViewGametimer = view.findViewById(R.id.tv_gametimer)
+        gameTimer = GameTimer(textViewGametimer)
         val restartText =   view.findViewById<TextView>(R.id.tv_game_restart)
         restartText.setOnClickListener { resetTable() }
         initGame()
@@ -56,20 +57,20 @@ class GameFragment : Fragment() {
 
     }
 
-    private fun startTimer() {
-        object : CountDownTimer(3000000, 1000) {
-            override fun onTick(millisUntilFinished: Long) {
+    class GameTimer(gameTimerTextView: TextView, var gameCounter: Int = 0): CountDownTimer(300000, 1000) {
+        private var textViewGameTimer = gameTimerTextView
+        override fun onTick(millisUntilFinished: Long) {
+            textViewGameTimer.text = gameCounter.toString()
+            gameCounter++
+        }
 
-                textViewGametimer.text = gameCounter.toString()
-                gameCounter++
-            }
-            override fun onFinish() {
-            }
-        }.start()
+        override fun onFinish() {
+        }
+
     }
-
     private fun initGame() {
-        startTimer()
+        gameTimer.gameCounter = 0
+        gameTimer.start()
         playerOneString = arguments?.getString("playerOne").toString().replace("\\s".toRegex(), "")
         playerTwoString = arguments?.getString("playerTwo").toString().replace("\\s".toRegex(), "")
 
@@ -85,7 +86,9 @@ class GameFragment : Fragment() {
 
 
     private fun resetTable() {
-        gameCounter = 0
+        gameTimer.cancel()
+        gameTimer.gameCounter = 0
+        gameTimer.start()
         textViewGametimer.visibility = View.VISIBLE
         for(view: TextView in arrayOfGrids) {
             view.text = ""
@@ -138,7 +141,8 @@ class GameFragment : Fragment() {
     private fun endGame(winner: String) {
         textGameEnd.visibility = View.VISIBLE
         textViewGametimer.visibility = View.INVISIBLE
-        val gameTime = gameCounter
+        gameTimer.cancel()
+        gameTimer.gameCounter = 0
         when(winner) {
             "draw" -> {
                 textGameEnd.text = "It's a draw!"

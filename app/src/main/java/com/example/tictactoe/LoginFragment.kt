@@ -45,6 +45,13 @@ class LoginFragment : Fragment( ) {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        if(playerTwoText.text.toString() == "TTTBot") {
+            playerTwoText.isEnabled = false
+        }
+    }
+
 
     private fun startGame(playerOne: String, playerTwo: String) {
         (activity as MainActivity).setGameFragment(playerOne, playerTwo)
