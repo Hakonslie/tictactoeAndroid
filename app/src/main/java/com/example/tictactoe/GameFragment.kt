@@ -3,38 +3,41 @@ package com.example.tictactoe
 import android.graphics.Color
 import android.os.Bundle
 import android.support.v4.app.Fragment
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import android.widget.Toast
 import kotlin.random.Random
+import android.os.CountDownTimer
+
+
 
 class GameFragment : Fragment() {
 
-    // TODO: Need to show seconds past since game started (LiveData)
     // TODO: Need to add history (Implement local storage)
+    // TODO: Clean up game timer
     // TODO: Check Android Design principles, Architecture and code standards
     // TODO: Description of solution by text, strengths and weaknesses. Decisions etc.
     // TODO: Model of Architecture and and flow in app
     // TODO: Screenshots
-    // TODO: BONUS: Add difficult AI
     // TODO: BONUS: Make extra pretty
 
         lateinit var arrayOfGrids: Array<TextView>
-        var isXTurn: Boolean = true
-        var gameIsRunning: Boolean = false
-        var gameVSAI: Boolean = false
-        var moveNumber: Int = 0
+        private var isXTurn: Boolean = true
+        private var gameIsRunning: Boolean = false
+        private var gameVSAI: Boolean = false
+        private var moveNumber: Int = 0
         private var winningConditions: Array<String> = arrayOf("012", "345", "678", "036", "147", "258", "246", "048")
         private val arrayOfSides: Array<Int> = arrayOf(1, 3, 5, 7);
         private val arrayOfCorners: Array<Int> = arrayOf(0, 2, 6, 8);
         private lateinit var textViewPlayerOne: TextView
         private lateinit var textViewPlayerTwo: TextView
+        private lateinit var textViewGametimer: TextView
         private lateinit var textGameEnd: TextView
         private lateinit var playerOneString: String
         private lateinit var playerTwoString: String
+        private var gameCounter: Int = 0
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.fragment_game, container, false)
@@ -45,19 +48,32 @@ class GameFragment : Fragment() {
         textViewPlayerOne = view.findViewById(R.id.tv_game_player_one)
         textViewPlayerTwo = view.findViewById(R.id.tv_game_player_two)
         textGameEnd =       view.findViewById(R.id.tv_game_end)
+        textViewGametimer = view.findViewById(R.id.tv_gametimer)
         val restartText =   view.findViewById<TextView>(R.id.tv_game_restart)
         restartText.setOnClickListener { resetTable() }
         initGame()
         arrayOfGrids = loadGameBoard(view)
+
+    }
+
+    private fun startTimer() {
+        object : CountDownTimer(3000000, 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+
+                textViewGametimer.text = gameCounter.toString()
+                gameCounter++
+            }
+            override fun onFinish() {
+            }
+        }.start()
     }
 
     private fun initGame() {
+        startTimer()
         playerOneString = arguments?.getString("playerOne").toString().replace("\\s".toRegex(), "")
         playerTwoString = arguments?.getString("playerTwo").toString().replace("\\s".toRegex(), "")
 
-        if(playerTwoString == "TTTBot") {
-            gameVSAI = true
-        }
+        gameVSAI = playerTwoString == "TTTBot"
 
         textViewPlayerOne.text = playerOneString
         textViewPlayerTwo.text = playerTwoString
@@ -67,7 +83,10 @@ class GameFragment : Fragment() {
         gameIsRunning = true
     }
 
+
     private fun resetTable() {
+        gameCounter = 0
+        textViewGametimer.visibility = View.VISIBLE
         for(view: TextView in arrayOfGrids) {
             view.text = ""
         }
@@ -88,7 +107,7 @@ class GameFragment : Fragment() {
             view.findViewById(R.id.grid7),
             view.findViewById(R.id.grid8),
             view.findViewById(R.id.grid9)
-            )
+        )
         gridViews.map { tV -> tV.setOnClickListener { v -> clickedGrid(v)} }
         return gridViews
     }
@@ -101,14 +120,12 @@ class GameFragment : Fragment() {
                 &&  inGrid[Integer.parseInt(current[1])] == "X"
                 &&  inGrid[Integer.parseInt(current[2])] == "X")
             {
-                Log.e("X", "WINNER!")
                 endGame("playerOne")
             }
             else if(inGrid[Integer.parseInt(current[0].toString())] == "O"
                 &&  inGrid[Integer.parseInt(current[1].toString())] == "O"
                 &&  inGrid[Integer.parseInt(current[2].toString())] == "O")
             {
-                Log.e("O", "WINNER!")
                 endGame("playerTwo")
             }
         }
@@ -119,32 +136,32 @@ class GameFragment : Fragment() {
     }
 
     private fun endGame(winner: String) {
+        textGameEnd.visibility = View.VISIBLE
+        textViewGametimer.visibility = View.INVISIBLE
+        val gameTime = gameCounter
         when(winner) {
             "draw" -> {
-                textGameEnd.visibility = View.VISIBLE
                 textGameEnd.text = "It's a draw!"
             }
             "playerOne" -> {
-                textGameEnd.visibility = View.VISIBLE
                 textGameEnd.text = "$playerOneString won!"
             }
             "playerTwo" -> {
-                textGameEnd.visibility = View.VISIBLE
                 textGameEnd.text = "$playerTwoString won!"
             }
         }
+
+
         gameIsRunning = false
     }
 
     private fun setTurnPlayerOne() {
-        Log.e("Player", "One")
         textViewPlayerOne.setTextColor(Color.rgb(100, 200, 100))
         textViewPlayerTwo.setTextColor(Color.rgb(200, 100, 100))
         isXTurn = true
     }
 
     private fun setTurnPlayerTwo() {
-        Log.e("Player", "Two")
         textViewPlayerOne.setTextColor(Color.rgb(200, 100, 100))
         textViewPlayerTwo.setTextColor(Color.rgb(100, 200, 100))
         isXTurn = false
@@ -159,7 +176,6 @@ class GameFragment : Fragment() {
 
 
         // Corners
-        // val arrayOfDangerousCombinations: Array<String> = arrayOf("81", "83", "61", "65", "50", "70", "23", "27");
 
         // last move
         if(availableMoves.size == 1) {
@@ -182,7 +198,6 @@ class GameFragment : Fragment() {
             if (investigated != -1) clickedGrid(arrayOfGrids[investigated])
             else {
                 clickedGrid(arrayOfGrids[Integer.parseInt(availableMoves[Random.nextInt(0, availableMoves.size)])])
-                Log.e("AI", "I mad a random move :P")
             }
     }
 
@@ -192,60 +207,63 @@ class GameFragment : Fragment() {
     fun investigateMove(xPositions: List<Int>, oPositions: List<Int>): Int  {
 
         // Winning condititions: "012", "345", "678", "036", "147", "258", "246", "048"
-        val possibleMovesFirstPriority = mutableListOf<Int>();
-        val possibleMovesSecondPriority = mutableListOf<Int>();
-        // Calculate immediate dangers in opponent positioning
-        Log.e("xPositions", xPositions.toString())
-        Log.e("oPositions", oPositions.toString())
+        val possibleMovesFirstPriority = mutableListOf<Int>()
+        val possibleMovesSecondPriority = mutableListOf<Int>()
+
         for(winCon in winningConditions) {
             val currentConCheck = winCon.chunked(1)
-            var conditionsMet = 0
-            val missingSpots: MutableList<Int> = mutableListOf()
-            // Find dangerous combinations
+            var conditionsMetX = 0
+            var conditionsMetO = 0
+            val missingSpotsX: MutableList<Int> = mutableListOf()
+            val missingSpotsO: MutableList<Int> = mutableListOf()
+
+            //Can "O" Win?
+            for(conPos in currentConCheck) {
+                if( oPositions.contains(Integer.parseInt(conPos))) conditionsMetO++
+                else missingSpotsO.add(Integer.parseInt(conPos))
+            }
+            if(conditionsMetO == 2 && !xPositions.contains(missingSpotsO[0])) {
+                return missingSpotsO[0]
+            }
+
+            //Can "X" Win?
             for (conPos in currentConCheck) {
-                if (xPositions.contains(Integer.parseInt(conPos))) conditionsMet++
-                else missingSpots.add(Integer.parseInt(conPos))
+                if (xPositions.contains(Integer.parseInt(conPos))) conditionsMetX++
+                else missingSpotsX.add(Integer.parseInt(conPos))
             }
             // Check if there already are "O"-s there
-            if (conditionsMet == 2 && !oPositions.contains(missingSpots[0])) {
-                Log.e("AI", "Found a possible first priority move")
-                possibleMovesFirstPriority.add(missingSpots[0])
+            if (conditionsMetX == 2 && !oPositions.contains(missingSpotsX[0])) {
+                possibleMovesFirstPriority.add(missingSpotsX[0])
             }
-            else if (conditionsMet == 1 && !oPositions.contains(missingSpots[0]) && !oPositions.contains(missingSpots[1])) {
-                Log.e("AI", "Found a possible secondary priority move")
-                possibleMovesSecondPriority.addAll(arrayOf(missingSpots[0],missingSpots[1]))
+            else if (conditionsMetX == 1 && !oPositions.contains(missingSpotsX[0]) && !oPositions.contains(missingSpotsX[1])) {
+                possibleMovesSecondPriority.addAll(arrayOf(missingSpotsX[0],missingSpotsX[1]))
             }
         }
         // from: https://stackoverflow.com/questions/47200440/kotlin-how-to-find-number-of-repeated-values-in-a-l
-        // Check if there are moves that stop more winning conditions
         val betterSecondPriorityMoves: Map<Int, Int> = possibleMovesSecondPriority.groupingBy { it }.eachCount().filter { it.value > 1}
-        Log.e("AI", "Better SecondPriorityMoves: $betterSecondPriorityMoves")
-            var chosenMove: Int
+            val chosenMove: Int
 
         if (possibleMovesFirstPriority.size > 0) {
             chosenMove = possibleMovesFirstPriority[Random.nextInt(0, possibleMovesFirstPriority.size)]
-            Log.e("AI", "Going for a first priority move: $chosenMove")
             return chosenMove
         }
         else if (betterSecondPriorityMoves.isNotEmpty()) {
-            Log.e("AI", "This looks like a trap!")
             if(betterSecondPriorityMoves.size == 2) {
-                return arrayOfSides.map { v -> if(xPositions.contains(v) || oPositions.contains(v))}
+                val arrayOfAvailableSides: List<Int> = arrayOfSides.filter { !xPositions.contains(it) && !oPositions.contains(it) }
+                chosenMove = arrayOfAvailableSides[(Random.nextInt(0, arrayOfAvailableSides.size))]
+                return chosenMove
             }
             chosenMove = betterSecondPriorityMoves.entries.elementAt(Random.nextInt(betterSecondPriorityMoves.size)).key
-            Log.e("AI", "Going for a good second priority move $chosenMove")
             return chosenMove
         }
         else if (possibleMovesSecondPriority.size > 0) {
             chosenMove = possibleMovesSecondPriority[Random.nextInt(0, possibleMovesSecondPriority.size)]
-            Log.e("AI", "Going for an ok second priority move $chosenMove")
             return chosenMove
         }
         else return -1
     }
 
     //TODO: Add emoji responses from BOT
-    //TODO: https://developer.android.com/reference/android/os/CountDownTimer
 
     // Double corner is dangerous
 
@@ -265,7 +283,7 @@ class GameFragment : Fragment() {
                 textView.text = "X";
                 setTurnPlayerTwo()
                 checkGameStatus()
-                if(gameIsRunning && gameVSAI)  makeAIMove()
+                if(gameIsRunning && gameVSAI) {makeAIMove()}
             } else  {
                 textView.text = "O";
                 setTurnPlayerOne()

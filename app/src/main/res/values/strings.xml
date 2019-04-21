@@ -1,7 +1,6 @@
 <resources>
     <string name="app_name">tictactoe</string>
 
-    <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="title_activity_game">GameActivity</string>
     <string name="action_settings">Settings</string>
@@ -11,4 +10,5 @@
     <string name="player_number_two_login_hint">Player number two</string>
     <string name="restart_game">Restart</string>
     <string name="empty_column"/>
+    <string name="nameOfBot">TTTBot</string>
 </resources>

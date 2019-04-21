@@ -33,9 +33,15 @@ class LoginFragment : Fragment( ) {
     // Inspired by: https://developer.android.com/guide/topics/ui/controls/checkbox.html
     private fun onCheckboxClicked(view: View) {
         if (view is CheckBox) {
-            val checked: Boolean = view.isChecked
-            playerTwoText.setText("TTTBot")
-            playerTwoText.isEnabled = !checked
+            if (view.isChecked)
+            {
+                playerTwoText.setText(getString(R.string.nameOfBot))
+                playerTwoText.isEnabled = false
+            }
+            else {
+                playerTwoText.setText("")
+                playerTwoText.isEnabled = true
+            }
         }
     }
 

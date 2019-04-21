@@ -6,6 +6,18 @@
         android:layout_height="match_parent"
         android:paddingTop="150dp">
 
+    <TextView
+            android:text="0"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:id="@+id/tv_gametimer"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintHorizontal_bias="1.0" android:layout_marginTop="44dp"/>
+
+
     <LinearLayout
             android:id="@+id/linear_layout_vs_text"
             android:orientation="horizontal"
