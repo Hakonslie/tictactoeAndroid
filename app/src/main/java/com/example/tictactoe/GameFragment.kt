@@ -1,6 +1,7 @@
 package com.example.tictactoe
 
 import android.graphics.Color
+import android.os.AsyncTask
 import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.view.LayoutInflater
@@ -10,17 +11,15 @@ import android.widget.TextView
 import android.widget.Toast
 import kotlin.random.Random
 import android.os.CountDownTimer
-
+import android.util.Log
 
 
 class GameFragment : Fragment() {
 
-    // TODO: Need to add history (Implement local storage)
     // TODO: Check Android Design principles, Architecture and code standards
     // TODO: Description of solution by text, strengths and weaknesses. Decisions etc.
     // TODO: Model of Architecture and and flow in app
     // TODO: Screenshots
-    // TODO: BONUS: Make extra pretty
 
         lateinit var arrayOfGrids: Array<TextView>
         private var isXTurn: Boolean = true
@@ -37,13 +36,19 @@ class GameFragment : Fragment() {
         private lateinit var playerOneString: String
         private lateinit var playerTwoString: String
         private lateinit var gameTimer: GameTimer
+        private lateinit var matchDao: MatchResultDao
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+
         return inflater.inflate(R.layout.fragment_game, container, false)
+
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        matchDao = AppDatabase.getDatabase(view.context).matchResultDao()
+
 
         textViewPlayerOne = view.findViewById(R.id.tv_game_player_one)
         textViewPlayerTwo = view.findViewById(R.id.tv_game_player_two)
@@ -137,8 +142,32 @@ class GameFragment : Fragment() {
        }
 
     }
+    private fun addWinToDB(winner: String) {
+
+        class GetWinsAsyncTask: AsyncTask<String, Void, Int>() {
+            override fun doInBackground(vararg params: String): Int {
+                val winnerInTask = params[0]
+                val wins = matchDao.getForPlayer(winnerInTask)
+                return wins
+            }
+        }
+        val currentWins = GetWinsAsyncTask().execute(winner).get() + 1
+
+
+        class PutWinAsyncTask: AsyncTask<Any, Void, Void>() {
+            override fun doInBackground(vararg params: Any?): Void? {
+                matchDao.insert(ResultRoom(params[0] as String, params[1] as Int))
+                return null
+            }
+
+        }
+        PutWinAsyncTask().execute(winner, currentWins)
+
+
+            }
 
     private fun endGame(winner: String) {
+
         textGameEnd.visibility = View.VISIBLE
         textViewGametimer.visibility = View.INVISIBLE
         gameTimer.cancel()
@@ -148,9 +177,14 @@ class GameFragment : Fragment() {
                 textGameEnd.text = "It's a draw!"
             }
             "playerOne" -> {
+
+                addWinToDB(playerOneString)
+
                 textGameEnd.text = "$playerOneString won!"
             }
             "playerTwo" -> {
+
+                addWinToDB(playerTwoString)
                 textGameEnd.text = "$playerTwoString won!"
             }
         }
@@ -267,10 +301,6 @@ class GameFragment : Fragment() {
         else return -1
     }
 
-    //TODO: Add emoji responses from BOT
-
-    // Double corner is dangerous
-
     private fun clickedGrid(view: View) {
         val textView: TextView = view as TextView
 
@@ -288,13 +318,17 @@ class GameFragment : Fragment() {
                 setTurnPlayerTwo()
                 checkGameStatus()
                 if(gameIsRunning && gameVSAI) {makeAIMove()}
-            } else  {
+
+            } else if(!isXTurn) {
                 textView.text = "O";
+
+                checkGameStatus();
                 setTurnPlayerOne()
                     }
+
             moveNumber++
 
-            checkGameStatus();
+
 
         }
         }

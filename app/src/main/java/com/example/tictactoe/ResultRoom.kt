@@ -4,11 +4,9 @@ import android.arch.persistence.room.ColumnInfo
 import android.arch.persistence.room.Entity
 import android.arch.persistence.room.PrimaryKey
 
-@Entity   (tableName = "results")
-
+@Entity(tableName = "results")
 data class ResultRoom(
-    @PrimaryKey val uid: Int,
-    @ColumnInfo(name = "player_name") val playerX: String?,
-    @ColumnInfo(name = "player_wins") val matchTime: Int?
+    @PrimaryKey @ColumnInfo(name = "player_name") val player_name: String,
+    @ColumnInfo(name = "player_wins") val matchWins: Int
 )
 

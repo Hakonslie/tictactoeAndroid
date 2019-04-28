@@ -8,13 +8,12 @@ import android.widget.TextView
 
 class ResultsAdapter : RecyclerView.Adapter<ResultsAdapter.ResultsAdapterViewHolder>() {
 
-
-    private var resultData: Map<String, Int>? = null
-
+    private var resultsList: List<ResultRoom> = listOf();
 
     class ResultsAdapterViewHolder(view: View) : RecyclerView.ViewHolder(view)
     {
-        var resultsTextView: TextView = view.findViewById(R.id.tv_result_data)
+        var resultsNameView: TextView = view.findViewById(R.id.tv_result_name)
+        var resultsWinsView: TextView = view.findViewById(R.id.tv_result_wins)
     }
 
     override fun onCreateViewHolder(viewGroup: ViewGroup, p1: Int): ResultsAdapter.ResultsAdapterViewHolder {
@@ -25,15 +24,18 @@ class ResultsAdapter : RecyclerView.Adapter<ResultsAdapter.ResultsAdapterViewHol
         return ResultsAdapterViewHolder(view)
     }
     override fun onBindViewHolder(resultsAdapterViewHolder: ResultsAdapterViewHolder, position: Int) {
-        val currentResultData: List<String> = resultData!!.map { it.toString() }
-        resultsAdapterViewHolder.resultsTextView.text = currentResultData.toString()
+
+        resultsAdapterViewHolder.resultsNameView.text = resultsList[position].player_name
+        resultsAdapterViewHolder.resultsWinsView.text = resultsList[position].matchWins.toString()
     }
 
     override fun getItemCount(): Int {
-        return resultData?.size ?: 0
+        return resultsList.size
     }
-    fun setResultData(resultDataParam: Map<String, Int>) {
-        resultData = resultDataParam
+
+    fun setResultData(resultDataParam: List<ResultRoom>) {
+        resultsList = resultDataParam.sortedByDescending { it.matchWins }
+
         notifyDataSetChanged()
     }
 
