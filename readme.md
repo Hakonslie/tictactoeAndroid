@@ -1,7 +1,7 @@
 # Tic Tac Toe Android
 
 
-![App bilder](app_03.PNG)
+![App bilder](images/app_03.PNG)
 
 ## Forklaring
 
